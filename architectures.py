@@ -106,6 +106,36 @@ arch_3_3_b = [ None, # index=0 won't be used
     {  'type'    : 'fully_connected', 'out_dim' : 43,  'nonlinear' : None,   'name' : 'logits' }
     ]
 
+    
+ arch_3_3_c = [ None, # index=0 won't be used
+    { 'type'  : 'conv2d', 'W_pars' : ( 3, 3, 64),  'strides' : ( 1, 1, 1, 1),
+      'name'  : 'conv1'},
+
+    {  'type'    : 'max_pool', 'ksize'   : (1, 2, 2, 1), 'strides' : (1, 2, 2, 1),
+       'padding' : 'SAME', 'name'    : 'max_p1'  },
+
+    { 'type'  : 'conv2d', 'W_pars' : ( 3, 3, 32),  'strides' : ( 1, 1, 1, 1),
+      'name'  : 'conv2'},
+
+    { 'type'    : 'max_pool', 'ksize'   : (1, 2, 2, 1), 'strides' : (1, 2, 2, 1),
+      'padding' : 'SAME', 'name'    : 'max_p2'  },
+
+    { 'type'  : 'conv2d', 'W_pars' : ( 5, 5, 16),  'strides' : ( 1, 1, 1, 1),
+      'name'  : 'conv3'},
+
+    # layer 4 : max_pool
+    {  'type'    : 'max_pool', 'ksize' : (1, 2, 2, 1), 'strides' : (1, 2, 2, 1),
+       'padding' : 'SAME',   'name'  : 'max_p3'  },
+     # layer 5 : flatten
+    {  'type'    : 'flatten', 'name'    : 'flat1'},
+    #layer 6 : fully_connected
+    {  'type'    : 'fully_connected', 'out_dim' : 120, 'nonlinear' : tf.nn.relu, 'name'    : 'fc1'},
+    #layer 7 : fully_connected
+    {  'type'    : 'fully_connected', 'out_dim' : 84,  'nonlinear' : tf.nn.relu, 'name' : 'fc2'},
+    #layer 8 : fully_connected  - no relu afterwards
+    {  'type'    : 'fully_connected', 'out_dim' : 43,  'nonlinear' : None,   'name' : 'fc3' }
+    ]
+
 
 arch_3_3_2fc = [ None, # index=0 won't be used
     { 'type'  : 'conv2d', 'W_pars' : ( 3, 3, 32),  'strides' : ( 1, 1, 1, 1),

@@ -347,3 +347,14 @@ def make_hyp_par_dicts( lattice_specs ) :
 
     return  [ dict(zip(par_names,comb))
               for comb in product( *iters ) ]
+
+def to_pickle( obj, fname ) : 
+    with open( fname, "wb") as f_out :
+        print( "Writing to " + fname )
+        pickle.dump( obj, f_out )
+
+def md5_digest_from_pars( hyp_pars, digest_len = 8) : 
+    hyp_pars_str = str( sorted( list( hyp_pars.items() ) ) ) 
+    md5_dig = md5( hyp_pars_str.encode("utf8") ).hexdigest()[:digest_len]
+    out_path = "experiment_results/exp_" + md5_dig + ".pkl"
+    return md5_dig, out_path 
