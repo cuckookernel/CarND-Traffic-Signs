@@ -95,7 +95,9 @@ consisted of the following layers:
 | Convolution 5x5 + RELU   | 1 x 1 stride, valid padding, outputs  3 x 3 x 16 |   
 | Flatten 	          	| outputs vector of dimension 144               | 
 | Fully connected + RELU  | outputs vector of dimension 120        		|
+| Dropout                 |                                              
 | Fully connected + RELU  | outputs vector of dimension   83      		|
+| Dropout                 |                                              
 | Fully connected       | outputs vector of dimension   43     		        |
 | Softmax				| outputs vector of probabilitites of dimension 43	|
 

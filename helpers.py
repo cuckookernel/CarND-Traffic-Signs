@@ -4,14 +4,18 @@ Created on Fri Dec 28 08:48:41 2018
 
 @author: mrestrepo
 """
+import os
+import time
+import pickle
+
 import tensorflow as tf
 import cv2
 import numpy as np
 import pandas as pd
 
+from hashlib import md5
+
 import helpers as h
-import os
-import time
 
 import architectures as arch
 
@@ -221,7 +225,8 @@ def run_training( data, hyp_pars, log_pars, n_epochs ) :
     netw_arch = getattr( arch, hyp_pars["netw_arch_name"] )
 
     tf.reset_default_graph()
-    tnsr = build_network_and_metrics( X_train, y_train, netw_arch, hyp_pars )
+    n_classes = len( set(y_train) )
+    tnsr = build_network_and_metrics( X_train.shape[1:], n_classes, netw_arch, hyp_pars )
 
     def eval_accuracy( sess, X, y ) :
         return sess.run( tnsr["accuracy"], feed_dict={ tnsr["input"]: X,
@@ -251,6 +256,13 @@ def run_training( data, hyp_pars, log_pars, n_epochs ) :
                                       'avg_train_accy' : avg_tr_accy_epoch,
                                       'valid_accy' : valid_accy} )
 
+            if "save_prefix" in log_pars :
+                ckpt_fname = ( log_pars["save_prefix"] + "." +
+                               md5_digest_from_pars(hyp_pars)[0] + f".{epoch}.tf.ckpt" )
+                print( "Saving model checkpoint to: " + ckpt_fname )
+                saver = tf.train.Saver()
+                saver.save( sess, ckpt_fname )
+
             return pd.DataFrame( summary_recs )[['epoch', 'avg_loss',
                                         'avg_train_accy', 'valid_accy']]
 
@@ -259,6 +271,22 @@ def run_training( data, hyp_pars, log_pars, n_epochs ) :
             test_acc = eval_accuracy( sess, data["X_test"], data["y_test"] )
             print('Testing Accuracy: {:>6.4f}'.format(test_acc))
 
+
+
+def build_from_ckpt( X_shape, n_classes, ckpt_fname, hyp_pars ) :
+
+    netw_arch = getattr( arch, hyp_pars["netw_arch_name"] )
+
+    tf.reset_default_graph()
+    tnsr = build_network_and_metrics( X_shape, n_classes, netw_arch, hyp_pars )
+    saver = tf.train.Saver()
+
+    with tf.Session() as sess :
+         saver.restore(sess, "/tmp/model.ckpt")
+
+         return sess.run( tnsr["accuracy"], feed_dict={ tnsr["input"]: X,
+                                                       tnsr["y_true_idx"] : y,
+                                                       tnsr["keep_prob"]: 1.} )
 
 
 def run_epoch( sess, epoch, data, tnsr, hyp_pars, log_pars ) :
@@ -301,15 +329,15 @@ def run_epoch( sess, epoch, data, tnsr, hyp_pars, log_pars ) :
     return avg_loss_epoch, avg_tr_accu_epoch
 
 
-def build_network_and_metrics( X_train, y_train, netw_arch, hyp_pars ) :
+def build_network_and_metrics( X_shape, n_classes, netw_arch, hyp_pars ) :
 
-    n_classes = len( set(y_train) )
+    # n_classes = len( set(y_train) )
 
     with tf.device( MY_DEV ) :
 
         y_true_idx = tf.placeholder( tf.int32, (None, ), name='y_true_idx')
         place_holders = {
-            "input"      : tf.placeholder( tf.float32, (None, 32, 32, X_train.shape[-1]),
+            "input"      : tf.placeholder( tf.float32, (None, X_shape[0], X_shape[1], X_shape[2] ),
                                            name='input' ),
             "keep_prob"  : tf.placeholder(tf.float32),
             "y_true_idx" : y_true_idx,
@@ -348,13 +376,13 @@ def make_hyp_par_dicts( lattice_specs ) :
     return  [ dict(zip(par_names,comb))
               for comb in product( *iters ) ]
 
-def to_pickle( obj, fname ) : 
+def to_pickle( obj, fname ) :
     with open( fname, "wb") as f_out :
         print( "Writing to " + fname )
         pickle.dump( obj, f_out )
 
-def md5_digest_from_pars( hyp_pars, digest_len = 8) : 
-    hyp_pars_str = str( sorted( list( hyp_pars.items() ) ) ) 
+def md5_digest_from_pars( hyp_pars, digest_len = 8) :
+    hyp_pars_str = str( sorted( list( hyp_pars.items() ) ) )
     md5_dig = md5( hyp_pars_str.encode("utf8") ).hexdigest()[:digest_len]
     out_path = "experiment_results/exp_" + md5_dig + ".pkl"
-    return md5_dig, out_path 
+    return md5_dig, out_path
